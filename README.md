@@ -1,12 +1,14 @@
-# SOC Home Lab – Windows Security Monitoring & Brute-Force Detection
+# 🛡️ SOC Home Lab – Windows Security Monitoring & Brute-Force Detection
 
 ## 📌 Project Overview
 
-Built a hands-on Security Operations Center (SOC) home lab using Splunk Enterprise to collect, monitor, investigate, and detect suspicious Windows authentication activity.
+Built a hands-on Security Operations Center (SOC) home lab using Splunk Enterprise to collect, monitor, investigate, and detect Windows authentication activity.
 
 The project demonstrates an end-to-end SOC workflow:
 
-Windows Security Logs → SIEM → Detection Engineering → Alerting → Investigation → MITRE ATT&CK Mapping → Response
+**Windows Security Logs → SIEM → Detection Engineering → Alerting → Investigation → MITRE ATT&CK Mapping → Response**
+
+---
 
 ## 🎯 Objectives
 
@@ -19,16 +21,20 @@ Windows Security Logs → SIEM → Detection Engineering → Alerting → Invest
 - Map the detected behavior to MITRE ATT&CK
 - Document investigation findings and response recommendations
 
+---
+
 ## 🛠️ Technologies & Tools
 
-- Splunk Enterprise 10.4.3
-- Windows 11
-- Windows Event Logs
-- SPL (Splunk Search Processing Language)
-- VMware
-- MITRE ATT&CK
+- **Splunk Enterprise 10.4.3**
+- **Windows 11**
+- **Windows Event Logs**
+- **SPL (Splunk Search Processing Language)**
+- **VMware**
+- **MITRE ATT&CK**
 
-## 🔍 Windows Events Investigated
+---
+
+## 🔎 Windows Events Investigated
 
 | Event ID | Description |
 |----------|-------------|
@@ -36,13 +42,15 @@ Windows Security Logs → SIEM → Detection Engineering → Alerting → Invest
 | 4625 | Failed Logon |
 | 4672 | Special Privileges Assigned to New Logon |
 
-## 🚨 Detection Engineering
+---
 
-### Detection Objective
+# 🚨 Detection Engineering
 
-Detect 3 or more failed Windows logon attempts for the same user and source within a 5-minute window.
+## Detection Objective
 
-### SPL Detection
+Detect **3 or more failed Windows logon attempts for the same user and source within a 5-minute window**.
+
+## SPL Detection
 
 ```spl
 index=* sourcetype=WinEventLog:Security EventCode=4625
