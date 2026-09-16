@@ -93,6 +93,10 @@ A scheduled Splunk alert was configured to operationalize the detection.
 | Action | Add to Triggered Alerts |
 | Permissions | Private |
 
+### Alert Configuration Evidence
+
+![Splunk Alert Configuration](04-alert-configuration.png)
+
 ---
 
 # 🧪 Detection Validation
@@ -114,6 +118,10 @@ Splunk successfully detected the authentication activity.
 | Event ID | 4625 |
 | Logon Type | 2 |
 
+### Detection Result Evidence
+
+![Brute-Force Detection Result](03-bruteforce-detection-result.png)
+
 The scheduled Splunk alert successfully appeared in **Triggered Alerts**.
 
 ---
@@ -132,6 +140,10 @@ The failed authentication events contained the following characteristics:
 - **Sub-Status:** `0xC000006A`
 - **Failure Reason:** Unknown user name or bad password
 - **Attempts:** 3 within a 5-minute window
+
+### Failed Login Investigation Evidence
+
+![Failed Login Investigation](02-failed-login-investigation.png)
 
 ## Source Analysis
 
@@ -220,6 +232,10 @@ A Splunk Dashboard Studio dashboard was created for security monitoring.
 - Privileged Logons
 - Failed Login Activity Over Time
 
+### Dashboard Evidence
+
+![Splunk Security Monitoring Dashboard](01-splunk-dashboard.png)
+
 The dashboard provides a centralized view of Windows authentication activity and detection results.
 
 ---
@@ -228,40 +244,35 @@ The dashboard provides a centralized view of Windows authentication activity and
 
 The project was validated using screenshots captured from the Splunk environment.
 
-### Evidence 1 — Windows Security Events
+### Evidence 1 — Splunk Security Dashboard
 
-Shows Windows authentication events collected by Splunk.
+The dashboard provides centralized visibility into Windows authentication activity.
+
+![Splunk Security Monitoring Dashboard](01-splunk-dashboard.png)
 
 ### Evidence 2 — Failed Login Investigation
 
 Shows investigation of Event ID 4625 and authentication-related fields.
 
-### Evidence 3 — Detection Query
+![Failed Login Investigation](02-failed-login-investigation.png)
 
-Shows the SPL detection identifying repeated failed logins within a 5-minute window.
+### Evidence 3 — Brute-Force Detection Result
 
-### Evidence 4 — Splunk Security Dashboard
+Shows the detection identifying 3 failed login attempts for the same user and source within a 5-minute window.
 
-Shows authentication monitoring and detection metrics.
+![Brute-Force Detection Result](03-bruteforce-detection-result.png)
 
-### Evidence 5 — Scheduled Alert Configuration
+### Evidence 4 — Alert Configuration
 
-Shows the configuration of the brute-force detection alert.
+Shows the scheduled brute-force detection alert configuration.
 
-### Evidence 6 — Triggered Alert
+![Splunk Alert Configuration](04-alert-configuration.png)
+
+### Evidence 5 — Triggered Alert
 
 Shows the Splunk alert successfully triggering after the controlled test.
 
-### Evidence 7 — Detection Result
-
-Shows:
-
-```text
-Dhiraj
-127.0.0.1
-3 failed_attempts
-5-minute detection window
-```
+![Splunk Triggered Alert](05-triggered-alert.png)
 
 ---
 
@@ -352,3 +363,4 @@ The observed activity should not be interpreted as a confirmed real-world attack
 - [x] MITRE ATT&CK Mapping
 - [x] SOC Response Recommendations
 - [x] Project Documentation
+- [x] Evidence Screenshots
