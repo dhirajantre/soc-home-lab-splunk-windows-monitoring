@@ -2,23 +2,23 @@
 
 A hands-on Security Operations Center (SOC) home lab built using Splunk Enterprise to collect, monitor, investigate, and detect Windows authentication activity.
 
-This project demonstrates an end-to-end SOC workflow:
+The project demonstrates an end-to-end SOC workflow:
 
-**Windows Security Logs → SIEM → Detection Engineering → Alerting → Investigation → MITRE ATT&CK Mapping → Response**
+**Windows Security Logs → SIEM → Detection Engineering → Alerting → Investigation → MITRE ATT&CK Mapping → Analyst Assessment → Response**
 
 ---
 
-## 📌 Project Overview
+# 📌 Project Overview
 
 This project simulates a practical SOC monitoring and detection environment using Windows Security Event Logs and Splunk Enterprise.
 
 The primary objective was to monitor Windows authentication activity, investigate failed logon events, develop a time-based brute-force detection rule, configure a scheduled alert, validate the detection using controlled lab activity, and document the investigation.
 
-The authentication failures used for detection validation were intentionally generated in a controlled home-lab environment.
+All authentication failures used for detection validation were intentionally generated in a controlled home-lab environment.
 
 ---
 
-## 🎯 Objectives
+# 🎯 Objectives
 
 - Collect Windows Security Event Logs in Splunk
 - Monitor Windows authentication activity
@@ -30,7 +30,8 @@ The authentication failures used for detection validation were intentionally gen
 - Investigate detected authentication activity
 - Analyze source IP and authentication details
 - Map observed behavior to MITRE ATT&CK
-- Document the investigation using a SOC workflow
+- Document investigation findings
+- Create SOC response recommendations
 - Build a centralized security monitoring dashboard
 
 ---
@@ -50,13 +51,13 @@ The authentication failures used for detection validation were intentionally gen
 
 # 🔎 Windows Security Events Investigated
 
-The following Windows Security Event IDs were investigated during the project:
+| Event ID | Description |
+|---|---|
+| **4624** | Successful Logon |
+| **4625** | Failed Logon |
+| **4672** | Special Privileges Assigned to New Logon |
 
-| Event ID | Description | SOC Use Case |
-|---|---|---|
-| **4624** | Successful Logon | Monitor successful authentication |
-| **4625** | Failed Logon | Detect authentication failures and password-guessing patterns |
-| **4672** | Special Privileges Assigned to New Logon | Monitor privileged logon activity |
+These events were used to analyze authentication activity and privileged logon behavior. :contentReference[oaicite:1]{index=1}
 
 ---
 
@@ -64,13 +65,11 @@ The following Windows Security Event IDs were investigated during the project:
 
 ## Detection Objective
 
-Detect **3 or more failed Windows logon attempts for the same user and source within a 5-minute window**.
-
-This type of detection can help identify repeated authentication failures that may require further investigation.
+Detect **three or more failed Windows logon attempts for the same user and source within a five-minute window**.
 
 ---
 
-## 🔍 Detection SPL
+## 🔍 SPL Detection Query
 
 ```spl
 index=* sourcetype=WinEventLog:Security EventCode=4625
@@ -86,23 +85,22 @@ index=* sourcetype=WinEventLog:Security EventCode=4625
 
 ## 🧠 Detection Logic
 
-The SPL detection performs the following steps:
+The detection performs the following steps:
 
-1. Filters Windows failed logon events using Event ID `4625`.
-2. Extracts the relevant user account.
-3. Groups authentication failures into 5-minute time windows.
-4. Groups the events by:
-   - User account
-   - Source network address
-5. Counts the failed authentication attempts.
-6. Returns activity when the number of failures reaches **3 or more attempts**.
-7. Sorts the results by the number of failed attempts.
+1. Filters Windows failed authentication events using Event ID `4625`.
+2. Extracts the user account while excluding the machine account.
+3. Groups events into five-minute time windows.
+4. Groups activity by user and source network address.
+5. Counts failed authentication attempts.
+6. Returns a detection when the count reaches three or more.
+
+This detection logic is documented in the project report. :contentReference[oaicite:2]{index=2}
 
 ---
 
 # 🔔 Alert Configuration
 
-The detection was converted into a scheduled Splunk alert to simulate a practical SOC detection workflow.
+The detection was operationalized as a scheduled Splunk alert.
 
 ## Alert Details
 
@@ -114,31 +112,57 @@ The detection was converted into a scheduled Splunk alert to simulate a practica
 | **Cron Schedule** | `*/5 * * * *` |
 | **Time Range** | Last 5 minutes |
 | **Trigger Condition** | Number of Results > 0 |
-| **Trigger** | Once |
+| **Trigger Frequency** | Once |
+| **Alert Expiration** | 24 hours |
 | **Severity** | Medium |
-| **Trigger Action** | Add to Triggered Alerts |
+| **Action** | Add to Triggered Alerts |
 | **Permissions** | Private |
-| **Status** | Enabled |
+
+The alert configuration was documented and validated in Splunk. :contentReference[oaicite:3]{index=3}
 
 ---
 
-## 📸 Alert Configuration Evidence
+# 📸 Alert Configuration Evidence
 
 ![Splunk Alert Configuration](04-alert-configuration.png)
+
+The screenshot shows the scheduled alert configuration, cron schedule, time range, and trigger condition.
 
 ---
 
 # 🧪 Detection Validation
 
-The detection was validated using controlled Windows authentication activity.
+The detection was validated using a controlled authentication test.
 
-Three incorrect passwords were intentionally entered for the test account. The resulting Windows authentication failures were collected by Splunk and evaluated by the detection rule.
-
-The detection successfully identified the repeated failed authentication attempts.
+Three incorrect passwords were intentionally entered for the test account. On the next five-minute scheduled cycle, Splunk evaluated the detection search, identified the qualifying activity, and successfully triggered the alert. :contentReference[oaicite:4]{index=4}
 
 ---
 
-## Detection Result
+# 🚨 Triggered Alert
+
+The configured alert successfully appeared in Splunk's triggered-alert history.
+
+The validated detection was:
+
+```text
+Brute Force - 5 Minute Failed Login Detection
+```
+
+The triggered alert confirmed that the scheduled detection was functioning as intended.
+
+---
+
+# 📸 Triggered Alert Evidence
+
+![Splunk Triggered Alert](05-triggered-alert.png)
+
+The screenshot shows the Splunk triggered-alert history containing the validated detection.
+
+---
+
+# 🔎 Detection Result
+
+The validated detection identified:
 
 | Field | Observed Value |
 |---|---|
@@ -147,309 +171,206 @@ The detection successfully identified the repeated failed authentication attempt
 | **Failed Attempts** | 3 |
 | **Detection Window** | 5 minutes |
 | **Event ID** | 4625 |
-| **Logon Type** | 2 |
-| **Status** | `0xC000006D` |
-| **Sub-Status** | `0xC000006A` |
+| **Logon Type** | 2 – Interactive |
+
+The validated detection occurred during the `17:00–17:05` window on 15 September 2026. :contentReference[oaicite:5]{index=5}
 
 ---
 
-## 📸 Detection Result Evidence
+# 📸 Detection Result Evidence
 
 ![Brute-Force Detection Result](03-bruteforce-detection-result.png)
 
----
-
-# 🚨 Triggered Alert Validation
-
-After the controlled authentication test, the scheduled Splunk alert successfully triggered.
-
-The triggered alert confirmed that the detection rule and scheduled alert were working together as intended.
-
----
-
-## Triggered Alert
-
-**Alert:** Brute Force - 5 Minute Failed Login Detection
-
-**Severity:** Medium
-
-**Trigger:** Number of Results > 0
-
-**Validation:** Successfully triggered after controlled authentication failures.
-
----
-
-## 📸 Triggered Alert Evidence
-
-![Splunk Triggered Alert](05-triggered-alert.png)
+The screenshot shows the SPL detection aggregating failed logons into five-minute windows and identifying the qualifying three-attempt detection.
 
 ---
 
 # 🔎 Incident Investigation
 
-After the detection was triggered, the authentication events were investigated using Splunk.
+The investigation was expanded to the surrounding 24-hour period.
 
-The investigation focused on:
+The search identified **11 failed logon attempts against the same account in four separate bursts**.
 
-- User account
-- Source network address
-- Logon type
-- Authentication status
-- Sub-status
-- Failure reason
-- Event timeline
-- Frequency of authentication failures
+One burst containing three attempts between approximately `17:01:46` and `17:01:51` met the detection threshold and was carried forward for investigation. :contentReference[oaicite:6]{index=6}
 
 ---
 
-## Observed Authentication Activity
-
-The investigated failed authentication events contained the following characteristics:
+# 📋 Observed Activity
 
 | Field | Observed Value |
 |---|---|
 | **Event ID** | 4625 |
 | **User Account** | Dhiraj |
 | **Source Address** | `127.0.0.1` |
+| **Workstation** | `DHIRAJ-WIN11` |
 | **Logon Type** | 2 – Interactive |
 | **Status** | `0xC000006D` |
 | **Sub-Status** | `0xC000006A` |
 | **Failure Reason** | Unknown user name or bad password |
-| **Attempts** | 3 within the detection window |
+| **Attempts** | 3 within a 5-minute window |
 
 ---
 
-## 📸 Failed Login Investigation Evidence
+# 📸 Failed Login Investigation Evidence
 
 ![Failed Login Investigation](02-failed-login-investigation.png)
+
+The screenshot shows the Event ID 4625 investigation and authentication-related fields.
 
 ---
 
 # 🌐 Source Analysis
 
-The observed source network address was:
+The source address for the observed authentication attempts was:
 
 ```text
 127.0.0.1
 ```
 
-`127.0.0.1` is the localhost address of the Windows system.
+`127.0.0.1` is the localhost address of the system.
 
-Therefore, the observed authentication activity originated from the local machine during this controlled test.
-
-There was no evidence in this test of an external source IP performing the authentication attempts.
+Therefore, the activity showed **no evidence of an external source** during this controlled test. :contentReference[oaicite:7]{index=7}
 
 ---
 
 # ⏱️ Timeline Analysis
 
-The failed authentication events were analyzed chronologically.
-
-During detection validation, three failed authentication attempts occurred within the same 5-minute detection window.
-
-The observed pattern was:
+During the validated `17:00–17:05` detection window:
 
 ```text
-Failed Login Attempt
-        ↓
+Failed Authentication Attempt
+          ↓
 ~2–3 seconds
-        ↓
-Failed Login Attempt
-        ↓
+          ↓
+Failed Authentication Attempt
+          ↓
 ~2–3 seconds
-        ↓
-Failed Login Attempt
-        ↓
+          ↓
+Failed Authentication Attempt
+          ↓
 Detection Threshold Reached
-        ↓
+          ↓
 Splunk Alert Triggered
 ```
 
-This behavior allowed the time-based detection rule to identify the repeated authentication failures.
+Splunk grouped the three qualifying events into a single five-minute detection window. :contentReference[oaicite:8]{index=8}
 
 ---
 
 # 🧑‍💻 Analyst Assessment
 
-The observed authentication pattern is **consistent with password-guessing behavior** because multiple failed authentication attempts occurred for the same account within a short period.
+The observed authentication pattern is consistent with password-guessing behavior because multiple failed attempts occurred for the same account within a short time window.
 
-However, the source address was `127.0.0.1`, and the authentication failures were intentionally generated as part of controlled detection testing.
+However, the source was `127.0.0.1` and the authentication failures were intentionally generated as part of a controlled SOC laboratory test. :contentReference[oaicite:9]{index=9}
 
-### Final Assessment
+## Final Classification
 
-**Controlled Lab Authentication Test**
+**CONTROLLED LAB TEST — NO CONFIRMED MALICIOUS ACTIVITY**
 
-There was **no confirmed external attack or account compromise** identified from this test.
-
-The purpose of the activity was to validate the SOC detection and alerting workflow.
+No confirmed external attack or account compromise was identified from this test. :contentReference[oaicite:10]{index=10}
 
 ---
 
 # 🎯 MITRE ATT&CK Mapping
 
-The observed authentication pattern was mapped to the MITRE ATT&CK framework.
+| Tactic | Technique | Sub-technique |
+|---|---|---|
+| **Credential Access** | **T1110 – Brute Force** | **T1110.001 – Password Guessing** |
 
-## Tactic
-
-**Credential Access**
-
-## Technique
-
-**T1110 – Brute Force**
-
-## Sub-technique
-
-**T1110.001 – Password Guessing**
-
-### Mapping Rationale
-
-Repeated authentication attempts using incorrect passwords are consistent with the behavior described by the Password Guessing sub-technique.
-
-In this project, the behavior was intentionally generated in a controlled lab environment for detection validation.
+The repeated failed-authentication pattern observed during the controlled test was mapped to password-guessing behavior. :contentReference[oaicite:11]{index=11}
 
 ---
 
 # 🛡️ Recommended SOC Response
 
-If similar authentication activity were detected in a production environment, a SOC analyst could perform the following steps:
+If similar authentication activity were detected in a production environment, a SOC Analyst could:
 
 1. Validate whether the authentication attempts were authorized.
-2. Identify the affected user account.
-3. Investigate the source IP address.
-4. Review successful logon events following the failed attempts.
-5. Search for additional authentication anomalies.
-6. Review related Windows Security Events.
-7. Check whether the affected account shows other suspicious activity.
-8. If malicious activity is confirmed, follow the organization's account containment procedures.
-9. Continue monitoring the affected account and source for additional suspicious activity.
-10. Document the investigation and escalate according to the organization's incident response process.
+2. Review successful logon events following the failed attempts.
+3. Investigate the source IP address and affected account.
+4. Check for additional authentication anomalies.
+5. Review related Windows Security events.
+6. If malicious activity is confirmed, consider temporarily locking or disabling the affected account according to organizational procedures.
+7. Continue monitoring the account and source for additional suspicious activity.
+
+These recommendations are based on the response workflow documented in the project report. :contentReference[oaicite:12]{index=12}
 
 ---
 
 # 📊 Splunk Security Monitoring Dashboard
 
-A Splunk Dashboard Studio dashboard was created to provide centralized visibility into Windows authentication activity.
-
-## Dashboard Name
+A Splunk Dashboard Studio dashboard named:
 
 **SOC Home Lab - Security Monitoring**
 
-## Dashboard Time Range
-
-**Last 24 hours**
+was created to provide centralized visibility into Windows authentication activity.
 
 ## Dashboard Panels
 
-The dashboard contains:
+- Failed Windows Logins
+- Successful Windows Logins
+- Brute Force Detections
+- Privileged Logons
+- Failed Login Activity Over Time
 
-- **Failed Windows Logins**
-- **Successful Windows Logins**
-- **Brute Force Detections**
-- **Privileged Logons**
-- **Failed Login Activity Over Time**
+The dashboard uses a rolling 24-hour view of Windows authentication activity. :contentReference[oaicite:13]{index=13}
 
 ---
 
-## 📸 Dashboard Evidence
+# 📸 Dashboard Evidence
 
 ![Splunk Security Monitoring Dashboard](01-splunk-dashboard.png)
 
----
+The dashboard provides a centralized view of Windows authentication activity.
 
-# 📸 Project Evidence
-
-The following screenshots provide evidence of the completed SOC monitoring and detection workflow.
-
-### 1. Splunk Security Monitoring Dashboard
-
-![Splunk Security Monitoring Dashboard](01-splunk-dashboard.png)
-
-Centralized dashboard showing Windows authentication activity and security monitoring metrics.
+> **Note:** The dashboard's Brute Force Detections panel may show `0` after the validated detection ages out of the rolling 24-hour dashboard window. The triggered-alert and detection-result evidence confirm that the detection fired successfully when the test activity occurred. :contentReference[oaicite:14]{index=14}
 
 ---
 
-### 2. Failed Login Investigation
-
-![Failed Login Investigation](02-failed-login-investigation.png)
-
-Investigation of Windows Event ID 4625 and authentication-related fields.
-
----
-
-### 3. Brute-Force Detection Result
-
-![Brute-Force Detection Result](03-bruteforce-detection-result.png)
-
-Detection result identifying repeated failed authentication attempts for the same user and source.
-
----
-
-### 4. Splunk Alert Configuration
-
-![Splunk Alert Configuration](04-alert-configuration.png)
-
-Scheduled Splunk alert configured to detect the authentication failure pattern.
-
----
-
-### 5. Splunk Triggered Alert
-
-![Splunk Triggered Alert](05-triggered-alert.png)
-
-Triggered alert confirming successful detection validation.
-
----
-
-# 🔄 SOC Detection & Investigation Workflow
+# 🔄 SOC Workflow
 
 ```text
-Windows Endpoint
-       ↓
-Windows Security Events
-       ↓
+Windows Authentication Activity
+            ↓
+Windows Security Event ID 4625
+            ↓
 Splunk SIEM
-       ↓
-Log Monitoring
-       ↓
-Detection Engineering
-       ↓
+            ↓
+Detection Rule
+            ↓
 3+ Failed Logins / 5 Minutes
-       ↓
+            ↓
 Scheduled Alert
-       ↓
+            ↓
 Alert Triggered
-       ↓
-Alert Triage
-       ↓
-Authentication Investigation
-       ↓
-Source Analysis
-       ↓
+            ↓
+Investigation
+            ↓
 MITRE ATT&CK Mapping
-       ↓
+            ↓
 Analyst Assessment
-       ↓
+            ↓
 Recommended Response
-       ↓
-Documentation
 ```
+
+This workflow represents the end-to-end process implemented in the lab. :contentReference[oaicite:15]{index=15}
 
 ---
 
-# 🧩 Skills Demonstrated
+# 📚 Skills Demonstrated
 
 ## SIEM & Security Monitoring
 
 - Splunk Enterprise
 - SIEM Monitoring
-- Security Event Monitoring
-- Windows Security Log Analysis
+- Windows Security Event Log Analysis
+- Authentication Monitoring
 
 ## Detection Engineering
 
 - SPL
 - Time-Based Detection
-- Authentication Failure Detection
+- Failed Authentication Detection
 - Brute-Force Detection Logic
 - Scheduled Security Alerts
 
@@ -458,9 +379,9 @@ Documentation
 - Alert Triage
 - Windows Event Analysis
 - Authentication Investigation
-- Source IP Analysis
+- Source/IP Analysis
 - Timeline Analysis
-- Event Correlation
+- Incident Investigation
 
 ## Security Framework
 
@@ -480,34 +401,97 @@ Documentation
 
 # 💡 Key Learning Outcomes
 
-Through this project, I gained practical experience in:
+Through this project, I practiced:
 
-- Collecting Windows Security Event Logs
-- Monitoring authentication activity using Splunk
-- Understanding Windows Security Event IDs
-- Investigating failed authentication events
-- Writing SPL queries for security monitoring
-- Building time-based detection logic
-- Configuring scheduled Splunk alerts
-- Validating detections using controlled activity
-- Investigating source and authentication information
-- Performing basic alert triage
+- Collecting and analyzing Windows Security logs
+- Understanding Windows authentication Event IDs
+- Writing SPL detection logic
+- Creating time-based detection rules
+- Configuring scheduled security alerts
+- Validating detections using controlled authentication activity
+- Investigating authentication failures
+- Analyzing source and authentication information
+- Performing timeline analysis
 - Mapping observed behavior to MITRE ATT&CK
-- Documenting security investigations
-- Building a SOC monitoring dashboard
+- Documenting SOC investigation findings
+- Building a security monitoring dashboard
 - Following an end-to-end SOC detection workflow
+
+---
+
+# 📄 Project Documentation Report
+
+A detailed PDF documentation report is included in this repository.
+
+**Report:**
+
+`Dhiraj_Antre_SOC_Home_Lab_Documentation_Report.pdf`
+
+The report contains:
+
+- Executive Summary
+- Project Overview
+- Objectives
+- Tools & Technologies
+- Windows Events Investigated
+- Detection Engineering
+- SPL Detection Query
+- Detection Logic
+- Alert Configuration
+- Detection Validation
+- Detection Result
+- Incident Investigation
+- Source Analysis
+- Timeline
+- Analyst Assessment
+- MITRE ATT&CK Mapping
+- Recommended SOC Response
+- Splunk Dashboard
+- SOC Workflow
+- Skills Demonstrated
+- Key Learning Outcomes
+- Project Status
+- Conclusion
+
+---
+
+# 📁 Project Files
+
+```text
+soc-home-lab-splunk-windows-monitoring/
+│
+├── README.md
+├── Dhiraj_Antre_SOC_Home_Lab_Documentation_Report.pdf
+│
+├── 01-splunk-dashboard.png
+├── 02-failed-login-investigation.png
+├── 03-bruteforce-detection-result.png
+├── 04-alert-configuration.png
+└── 05-triggered-alert.png
+```
+
+---
+
+# 📸 Project Evidence
+
+| Evidence | File |
+|---|---|
+| Splunk Security Dashboard | `01-splunk-dashboard.png` |
+| Failed Login Investigation | `02-failed-login-investigation.png` |
+| Brute-Force Detection Result | `03-bruteforce-detection-result.png` |
+| Alert Configuration | `04-alert-configuration.png` |
+| Triggered Alert | `05-triggered-alert.png` |
+| Full Documentation | `Dhiraj_Antre_SOC_Home_Lab_Documentation_Report.pdf` |
 
 ---
 
 # ⚠️ Lab Disclaimer
 
-This project was performed in a controlled home-lab environment for cybersecurity learning, detection engineering, and portfolio development.
+All authentication failures referenced in this project were intentionally generated in a controlled home-lab environment for cybersecurity learning and detection-engineering practice.
 
-All authentication failures used for detection validation were intentionally generated.
+No production system or real attacker was involved.
 
 The observed activity should not be interpreted as a confirmed real-world attack.
-
-No unauthorized systems were targeted as part of this project.
 
 ---
 
@@ -534,7 +518,7 @@ No unauthorized systems were targeted as part of this project.
 - [x] MITRE ATT&CK Mapping
 - [x] SOC Response Recommendations
 - [x] Evidence Screenshots
-- [x] Project Documentation
+- [x] Documentation Report
 
 ---
 
@@ -542,8 +526,8 @@ No unauthorized systems were targeted as part of this project.
 
 This project demonstrates a practical SOC monitoring, detection, alerting, and investigation workflow using **Splunk Enterprise** and **Windows Security Event Logs**.
 
-The project covers the complete workflow:
+The complete workflow is:
 
 **Log Collection → Monitoring → Detection → Alerting → Investigation → MITRE ATT&CK Mapping → Analyst Assessment → Response**
 
-The project was completed in a controlled home-lab environment and focuses on demonstrating practical entry-level SOC Analyst skills through hands-on security monitoring and detection engineering.
+The project was built and validated in a controlled home-lab environment and demonstrates practical entry-level SOC Analyst skills in security monitoring, detection engineering, alert triage, Windows event analysis, incident investigation, and security documentation.
